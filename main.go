@@ -24,7 +24,8 @@ type Message struct {
 
 func main() {
 	// Database connect
-	dsn := "host=dpg-d1hnjgvfte5s73ag8n2g-a user=apilab password=PHDZ0Y8yyr5IxaCZy1OLUXL8MoJJkM6W dbname=socket_fjdf port=5432 sslmode=disable"
+	dsn := "postgres://apilab:PHDZ0Y8yyr5IxaCZy1OLUXL8MoJJkM6W@dpg-d1hnjgvfte5s73ag8n2g-a.oregon-postgres.render.com:5432/socket_fjdf"
+
 	var err error
 	db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
