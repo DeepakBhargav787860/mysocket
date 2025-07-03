@@ -1,4 +1,4 @@
-module main.go
+module chatapp
 
 go 1.21.7
 
