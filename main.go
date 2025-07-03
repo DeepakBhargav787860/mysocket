@@ -33,7 +33,7 @@ func main() {
 	db.AutoMigrate(&Message{})
 
 	// Routes
-	http.HandleFunc("/ws", handleConnections)
+	Routes()
 	go handleMessages()
 
 	fmt.Println("Server started at :8080")
@@ -68,7 +68,9 @@ func handleMessages() {
 	for {
 		msg := <-broadcast
 		for client := range clients {
+			msg.Content = "hello bhaishab"
 			client.WriteJSON(msg)
 		}
 	}
+
 }
