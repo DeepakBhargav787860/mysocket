@@ -3,14 +3,12 @@ package main
 import (
 	"bytes"
 	businesslogic "chatapp/businessLogic"
+	"chatapp/cros"
 	"chatapp/db"
 	"chatapp/global"
-	"chatapp/route"
-	"fmt"
-	"io"
+	"chatapp/middleware"
 	"log"
 	"net/http"
-	"os"
 )
 
 type LogtailWriter struct {
@@ -35,14 +33,16 @@ func main() {
 	} else {
 		log.Println("database connected successfully 😘😘😘😘😘😘😘")
 	}
-	//logs
-	logtailEndpoint := "https://s1369505.eu-nbg-2-vec.betterstackdata.com"
 
-	// Logtail + Terminal dono me logs bhejna
-	log.SetOutput(io.MultiWriter(os.Stdout, &LogtailWriter{endpoint: logtailEndpoint}))
-	// Routes
-	route.Routes()
+	middleware.InitLogger()
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/ws", businesslogic.HandleConnections)
+	mux.Handle("/health", cros.EnableCORS(http.HandlerFunc(businesslogic.CheckHealth)))
+	mux.HandleFunc("/createProfile", businesslogic.CreateProfile)
+
+	// Wrap your mux with logging middleware
+	loggedMux := middleware.LoggingMiddleware(mux)
 	go businesslogic.HandleMessages()
-	fmt.Println("Server started at :8080")
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(":8080", loggedMux)
 }

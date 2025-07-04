@@ -6,6 +6,7 @@ import (
 	"net/http"
 )
 
+// not use
 func Routes() {
 
 	http.HandleFunc("/ws", businesslogic.HandleConnections)
