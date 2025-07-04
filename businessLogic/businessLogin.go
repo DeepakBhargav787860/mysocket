@@ -52,6 +52,8 @@ func HandleMessages() {
 }
 
 func CheckHealth(w http.ResponseWriter, r *http.Request) {
+
+	log.Println("information", r.Host, r.Method, r.RemoteAddr)
 	// if r.URL.Path == "/health" {
 	// 	log.Println("hey")
 	// }
