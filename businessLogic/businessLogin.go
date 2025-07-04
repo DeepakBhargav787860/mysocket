@@ -63,7 +63,7 @@ func CheckHealth(w http.ResponseWriter, r *http.Request) {
 	// w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json") // important
 	w.WriteHeader(http.StatusOK)
-	res := Resp{Response: "for continuous server up"}
+	res := Resp{Response: "anjali i love uuu tum best ho yrr mere liye best darling 😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘"}
 	err := json.NewEncoder(w).Encode(res)
 	if err != nil {
 		log.Println("Error encoding response:", err)
@@ -89,4 +89,5 @@ func CreateProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ws.WriteMessage(websocket.TextMessage, []byte("profile successfully created"))
+
 }
