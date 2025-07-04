@@ -51,23 +51,39 @@ func HandleMessages() {
 
 }
 
-func CheckHealth(w http.ResponseWriter, r *http.Request) {
+// func CheckHealth(w http.ResponseWriter, r *http.Request) {
 
-	log.Println("information", r.Host, r.Method, r.RemoteAddr)
-	// if r.URL.Path == "/health" {
-	// 	log.Println("hey")
-	// }
-	// ws, _ := global.Upgrader.Upgrade(w, r, nil)
-	// defer ws.Close()
-	// ws.WriteMessage(websocket.TextMessage, []byte("profile successfully created"))
-	// w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Content-Type", "application/json") // important
-	w.WriteHeader(http.StatusOK)
-	res := Resp{Response: "anjali i love uuu tum best ho yrr mere liye best darling 😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘"}
-	err := json.NewEncoder(w).Encode(res)
-	if err != nil {
-		log.Println("Error encoding response:", err)
+//		log.Println("information", r.Host, r.Method, r.RemoteAddr)
+//		// if r.URL.Path == "/health" {
+//		// 	log.Println("hey")
+//		// }
+//		// ws, _ := global.Upgrader.Upgrade(w, r, nil)
+//		// defer ws.Close()
+//		// ws.WriteMessage(websocket.TextMessage, []byte("profile successfully created"))
+//		// w.Header().Set("Access-Control-Allow-Origin", "*")
+//		w.Header().Set("Content-Type", "application/json") // important
+//		w.WriteHeader(http.StatusOK)
+//		res := Resp{Response: "anjali i love uuu tum best ho yrr mere liye best darling 😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘😘"}
+//		err := json.NewEncoder(w).Encode(res)
+//		if err != nil {
+//			log.Println("Error encoding response:", err)
+//		}
+//	}
+func CheckHealth(w http.ResponseWriter, r *http.Request) {
+	clientIP := r.Header.Get("X-Forwarded-For")
+	if clientIP == "" {
+		clientIP = r.RemoteAddr
 	}
+
+	log.Println("Client IP:", clientIP)
+	log.Println("Method:", r.Method)
+	log.Println("RemoteAddr (raw):", r.RemoteAddr)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	res := Resp{Response: "Hello from server!"}
+	json.NewEncoder(w).Encode(res)
 }
 
 func CreateProfile(w http.ResponseWriter, r *http.Request) {
