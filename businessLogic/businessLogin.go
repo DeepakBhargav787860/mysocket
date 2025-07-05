@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
 
@@ -138,7 +139,7 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	input.Password = hashPassword
-
+	input.UUID = uuid.New()
 	if err := global.DBase.Create(&input).Error; err != nil {
 		http.Error(w, "failed to create", http.StatusInternalServerError)
 		return
@@ -308,6 +309,7 @@ func RequestSend(w http.ResponseWriter, r *http.Request) {
 	// create request data
 
 	var rData = global.Request{
+		UUID:     uuid.New(),
 		Username: fData.Username,
 		MobileNo: fData.MobileNo,
 		Address:  fData.Address,
@@ -340,6 +342,7 @@ func RequestSend(w http.ResponseWriter, r *http.Request) {
 	// create request
 
 	var rCreate = global.UserFriend{
+		UUID:          uuid.New(),
 		UserProfileId: input.UserProfileId,
 		RequestId:     rId.ID,
 	}

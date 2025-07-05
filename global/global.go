@@ -35,7 +35,7 @@ type RequestSend struct {
 
 type UserProfile struct {
 	ID        uint      `gorm:"primaryKey"`
-	UUID      uuid.UUID `json:"uuid" gorm:"type:uuid;default:uuid_generate_v4()"` // auto handled by Postgres
+	UUID      uuid.UUID `json:"uuid"` // auto handled by Postgres
 	Username  string    `json:"username" binding:"required" gorm:"unique;not null"`
 	MobileNo  string    `json:"mobileNo" binding:"required" gorm:"unique;not null"`
 	Address   string    `json:"address" binding:"required"`
@@ -47,7 +47,7 @@ type UserProfile struct {
 
 type Request struct {
 	ID        uint      `gorm:"primaryKey"`
-	UUID      uuid.UUID `json:"uuid" gorm:"type:uuid;default:uuid_generate_v4()"` // auto handled by Postgres
+	UUID      uuid.UUID `json:"uuid"` // auto handled by Postgres
 	Username  string    `json:"username" binding:"required" gorm:"unique;not null"`
 	MobileNo  string    `json:"mobileNo" binding:"required" gorm:"unique;not null"`
 	Address   string    `json:"address" binding:"required"`
@@ -58,7 +58,7 @@ type Request struct {
 }
 
 type UserFriend struct {
-	UUID            uuid.UUID   `json:"uuid" gorm:"type:uuid;default:uuid_generate_v4()"`
+	UUID            uuid.UUID   `json:"uuid"`
 	ID              uint        `gorm:"primaryKey"`
 	UserProfileId   uint        `json:"userProfileId" binding:"required"`
 	RequestId       uint        `json:"requestId" binding:"required"`
