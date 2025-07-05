@@ -16,7 +16,7 @@ func DB() *gorm.DB {
 	var err error
 	db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		panic("DB connection failed")
+		panic("DB connection failedd")
 	}
 	db.AutoMigrate(&global.Message{}, &global.UserProfile{}, &global.UserFriend{}, &global.Request{})
 
