@@ -2,17 +2,21 @@ package cros
 
 import "net/http"
 
-func EnableCORS(h http.Handler) http.Handler {
+func EnableCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS")
+		origin := r.Header.Get("Origin")
+		// if origin == "https://jalitalks.com" {
+
+		// }
+		w.Header().Set("Access-Control-Allow-Origin", origin)
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS")
 
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusOK)
 			return
 		}
-
-		h.ServeHTTP(w, r)
+		next.ServeHTTP(w, r)
 	})
 }

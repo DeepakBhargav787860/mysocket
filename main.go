@@ -7,6 +7,7 @@ import (
 	"chatapp/db"
 	"chatapp/global"
 	"chatapp/middleware"
+	securemiddleware "chatapp/secureMiddleware"
 	"log"
 	"net/http"
 )
@@ -39,8 +40,16 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/ws", businesslogic.HandleConnections)
 	mux.Handle("/health", cros.EnableCORS(http.HandlerFunc(businesslogic.CheckHealth)))
+	//with socket
 	mux.HandleFunc("/createProfile", businesslogic.CreateProfile)
-
+	mux.Handle("/signUpUser", cros.EnableCORS(http.HandlerFunc(businesslogic.SignUp)))
+	mux.Handle("/loginUser", cros.EnableCORS(http.HandlerFunc(businesslogic.LoginUser)))
+	mux.Handle("/userProfile", securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.UserProfile)))
+	mux.Handle("/requestSend", securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.RequestSend)))
+	mux.Handle("/getRequestSend", securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.GetRequestSend)))
+	mux.Handle("/requestCome", securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.RequestCome)))
+	mux.Handle("/activeUser", securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.ActiveUser)))
+	mux.Handle("/getAllUser", securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.GetAllUser)))
 	// Wrap your mux with logging middleware
 	loggedMux := middleware.LoggingMiddleware(mux)
 	go businesslogic.HandleMessages()

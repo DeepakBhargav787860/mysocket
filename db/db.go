@@ -18,7 +18,7 @@ func DB() *gorm.DB {
 	if err != nil {
 		panic("DB connection failed")
 	}
-	db.AutoMigrate(&global.Message{}, &global.UserProfile{})
+	db.AutoMigrate(&global.Message{}, &global.UserProfile{}, &global.UserFriend{}, &global.Request{})
 
 	return db
 }
