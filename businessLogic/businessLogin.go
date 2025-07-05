@@ -179,7 +179,7 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 
 	ok, err := passwordhashing.ComparePasswordArgon2(input.Password, data.Password)
 	if err != nil || !ok {
-		http.Error(w, "failed to login", http.StatusInternalServerError)
+		http.Error(w, "failed to login or incorrect password", http.StatusInternalServerError)
 		return
 	}
 
