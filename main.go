@@ -42,6 +42,7 @@ func main() {
 	mux.Handle("/health", cros.EnableCORS(http.HandlerFunc(businesslogic.CheckHealth)))
 	//with socket
 	mux.HandleFunc("/createProfile", businesslogic.CreateProfile)
+	//without socket
 	mux.Handle("/signUpUser", cros.EnableCORS(http.HandlerFunc(businesslogic.SignUp)))
 	mux.Handle("/loginUser", cros.EnableCORS(http.HandlerFunc(businesslogic.LoginUser)))
 	mux.Handle("/userProfile", securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.UserProfile)))

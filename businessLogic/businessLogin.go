@@ -110,6 +110,14 @@ func CreateProfile(w http.ResponseWriter, r *http.Request) {
 		ws.WriteMessage(websocket.TextMessage, []byte("error when msg read"))
 		return
 	}
+	hashPassword, hashErr := passwordhashing.HashPasswordArgon2(data.Password)
+
+	if hashErr != nil {
+		http.Error(w, "failed to password hashing", http.StatusInternalServerError)
+		return
+	}
+	data.Password = hashPassword
+	data.UUID = uuid.New()
 	if err := global.DBase.Create(&data).Error; err != nil {
 		ws.WriteMessage(websocket.TextMessage, []byte("error accoured when create profile"))
 		return
