@@ -192,7 +192,7 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 
 		// Set JWT in secure cookie
 		http.SetCookie(w, &http.Cookie{
-			Name:     "token",
+			Name:     "Authorization",
 			Value:    token,
 			Path:     "/",
 			HttpOnly: true,
@@ -396,7 +396,7 @@ func GetAllUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if input.Id != 0 {
+	if input.Id == 0 {
 		http.Error(w, "something went wrong", http.StatusBadRequest)
 		return
 	}
@@ -407,4 +407,33 @@ func GetAllUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response.MessagePassed(w, data)
+}
+
+func FindUserByMobileNo(w http.ResponseWriter, r *http.Request) {
+
+	var input global.ReqMobileNo
+	err := json.NewDecoder(r.Body).Decode(&input)
+
+	if err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	if input.MobileNo == "" {
+		http.Error(w, "something went wrong", http.StatusBadRequest)
+		return
+	}
+	var data global.UserProfile
+
+	if err := global.DBase.Model(&global.UserProfile{}).Where("mobile_no=?", input.MobileNo).Find(&data).Error; err != nil {
+		http.Error(w, "failed to find in database", http.StatusInternalServerError)
+		return
+	}
+
+	if data.ID != 0 {
+		response.MessagePassed(w, data)
+	} else {
+		http.Error(w,"no user found",http.StatusNotFound)
+	}
+
 }

@@ -2,8 +2,8 @@ package securemiddleware
 
 import (
 	"fmt"
+	"log"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -27,19 +27,28 @@ func GenerateJWT(userID uuid.UUID) (string, error) {
 
 func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// 1. Get the token from the Authorization header
-		authHeader := r.Header.Get("Authorization")
-		if authHeader == "" {
-			http.Error(w, "Missing Authorization header", http.StatusUnauthorized)
+
+		cookie, err := r.Cookie("Authorization")
+		if err != nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
+		log.Println("cookie", cookie)
+		// 1. Get the token from the Authorization header
+		// authHeader := r.Header.Get("Authorization")
+		// log.Println("header", authHeader)
+		// if authHeader == "" {
+		// 	http.Error(w, "Missing Authorization header", http.StatusUnauthorized)
+		// 	return
+		// }
+		tokenString := cookie.Value
 
 		// 2. Extract token from Bearer
-		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-		if tokenString == authHeader {
-			http.Error(w, "Invalid token format", http.StatusUnauthorized)
-			return
-		}
+		// tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+		// if tokenString == authHeader {
+		// 	http.Error(w, "Invalid token format", http.StatusUnauthorized)
+		// 	return
+		// }
 
 		// 3. Parse and verify token
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {

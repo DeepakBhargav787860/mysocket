@@ -24,6 +24,10 @@ type MyBestHalfId struct {
 	Id uint `json:"id" binding:"required" `
 }
 
+type ReqMobileNo struct {
+	MobileNo string `json:"mobileNo" binding:"required" `
+}
+
 type MyBestHalf struct {
 	Username string `json:"username" binding:"required" `
 }
@@ -34,7 +38,7 @@ type RequestSend struct {
 }
 
 type UserProfile struct {
-	ID        uint      `gorm:"primaryKey"`
+	ID        uint      `json:"id" gorm:"primaryKey"`
 	UUID      uuid.UUID `json:"uuid"` // auto handled by Postgres
 	Username  string    `json:"username" binding:"required" gorm:"unique;not null"`
 	MobileNo  string    `json:"mobileNo" binding:"required" gorm:"unique;not null"`

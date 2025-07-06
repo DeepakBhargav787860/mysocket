@@ -51,6 +51,7 @@ func main() {
 	mux.Handle("/requestCome", securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.RequestCome)))
 	mux.Handle("/activeUser", securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.ActiveUser)))
 	mux.Handle("/getAllUser", securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.GetAllUser)))
+		mux.Handle("/findUserByMobileNo", cros.EnableCORS(securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.FindUserByMobileNo))))
 	// Wrap your mux with logging middleware
 	loggedMux := middleware.LoggingMiddleware(mux)
 	go businesslogic.HandleMessages()
