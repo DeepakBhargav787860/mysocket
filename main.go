@@ -6,7 +6,6 @@ import (
 	"chatapp/cros"
 	"chatapp/db"
 	"chatapp/global"
-	"chatapp/middleware"
 	securemiddleware "chatapp/secureMiddleware"
 	"log"
 	"net/http"
@@ -35,25 +34,25 @@ func main() {
 		log.Println("database connected successfully 😘😘😘😘😘😘😘")
 	}
 
-	middleware.InitLogger()
+	// middleware.InitLogger()
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("/ws", businesslogic.HandleConnections)
-	mux.Handle("/health", cros.EnableCORS(http.HandlerFunc(businesslogic.CheckHealth)))
+	// mux := http.NewServeMux()
+	http.HandleFunc("/ws", businesslogic.HandleConnections)
+	http.Handle("/health", cros.EnableCORS(http.HandlerFunc(businesslogic.CheckHealth)))
 	//with socket
-	mux.HandleFunc("/createProfile", businesslogic.CreateProfile)
+	http.HandleFunc("/createProfile", businesslogic.CreateProfile)
 	//without socket
-	mux.Handle("/signUpUser", cros.EnableCORS(http.HandlerFunc(businesslogic.SignUp)))
-	mux.Handle("/loginUser", cros.EnableCORS(http.HandlerFunc(businesslogic.LoginUser)))
-	mux.Handle("/userProfile", securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.UserProfile)))
-	mux.Handle("/requestSend", securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.RequestSend)))
-	mux.Handle("/getRequestSend", securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.GetRequestSend)))
-	mux.Handle("/requestCome", securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.RequestCome)))
-	mux.Handle("/activeUser", securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.ActiveUser)))
-	mux.Handle("/getAllUser", securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.GetAllUser)))
-		mux.Handle("/findUserByMobileNo", cros.EnableCORS(securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.FindUserByMobileNo))))
+	http.Handle("/signUpUser", cros.EnableCORS(http.HandlerFunc(businesslogic.SignUp)))
+	http.Handle("/loginUser", cros.EnableCORS(http.HandlerFunc(businesslogic.LoginUser)))
+	http.Handle("/userProfile", securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.UserProfile)))
+	http.Handle("/requestSend", securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.RequestSend)))
+	http.Handle("/getRequestSend", securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.GetRequestSend)))
+	http.Handle("/requestCome", securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.RequestCome)))
+	http.Handle("/activeUser", securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.ActiveUser)))
+	http.Handle("/getAllUser", securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.GetAllUser)))
+	http.Handle("/findUserByMobileNo", cros.EnableCORS(securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.FindUserByMobileNo))))
 	// Wrap your mux with logging middleware
-	loggedMux := middleware.LoggingMiddleware(mux)
+	// loggedMux := middleware.LoggingMiddleware(mux)
 	go businesslogic.HandleMessages()
-	http.ListenAndServe(":8080", loggedMux)
+	http.ListenAndServe(":8080", nil)
 }

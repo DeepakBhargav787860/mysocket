@@ -184,6 +184,7 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if ok {
+		log.Println("uuid", data.UUID)
 		token, err := securemiddleware.GenerateJWT(data.UUID)
 		if err != nil {
 			http.Error(w, "Failed to generate token", http.StatusInternalServerError)
@@ -433,7 +434,7 @@ func FindUserByMobileNo(w http.ResponseWriter, r *http.Request) {
 	if data.ID != 0 {
 		response.MessagePassed(w, data)
 	} else {
-		http.Error(w,"no user found",http.StatusNotFound)
+		http.Error(w, "no user found", http.StatusNotFound)
 	}
 
 }
