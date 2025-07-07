@@ -1,6 +1,7 @@
 package securemiddleware
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,53 +11,39 @@ import (
 	"github.com/google/uuid"
 )
 
+// Secret key
 var jwtSecret = []byte("dsfghjklljghjhhjkljfgsgdfhgjhhjhkjlxfcgvhjertertgyhujrtgh")
 
+// Custom key type for context
+type contextKey string
+
+const userIDKey = contextKey("user_id")
+
+// ✅ Generate JWT token
 func GenerateJWT(userID uuid.UUID) (string, error) {
 	claims := jwt.MapClaims{
 		"user_id": userID,
-		"exp":     time.Now().Add(time.Hour * 24).Unix(), // token expires in 24 hours
-		"iat":     time.Now().Unix(),                     // issued at
+		"exp":     time.Now().Add(time.Hour * 24).Unix(), // expires in 24 hours
+		"iat":     time.Now().Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	// Sign token with secret key
 	return token.SignedString(jwtSecret)
 }
 
+// ✅ Middleware to verify token and set user ID in context
 func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		authHeader := r.Header.Get("Authorization")
-		log.Println("header", authHeader)
-
 		cookie, err := r.Cookie("Authorization")
-		log.Println("error", err)
 		if err != nil {
+			log.Println("error reading cookie:", err)
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
-		log.Println("cookie", cookie)
-		// 1. Get the token from the Authorization header
-		// authHeader := r.Header.Get("Authorization")
-		// log.Println("header", authHeader)
-		// if authHeader == "" {
-		// 	http.Error(w, "Missing Authorization header", http.StatusUnauthorized)
-		// 	return
-		// }
+
 		tokenString := cookie.Value
 
-		// 2. Extract token from Bearer
-		// tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-		// if tokenString == authHeader {
-		// 	http.Error(w, "Invalid token format", http.StatusUnauthorized)
-		// 	return
-		// }
-
-		// 3. Parse and verify token
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			// Ensure correct signing method
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("unexpected signing method")
 			}
@@ -64,18 +51,48 @@ func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		})
 
 		if err != nil || !token.Valid {
+			log.Println("invalid token:", err)
 			http.Error(w, "Invalid or expired token", http.StatusUnauthorized)
 			return
 		}
 
-		// 4. Token is valid, optionally get user info from claims
-		if claims, ok := token.Claims.(jwt.MapClaims); ok {
-			userID := claims["user_id"]
-			fmt.Println("Authenticated user ID:", userID)
-			// You can attach userID to context here
+		claims, ok := token.Claims.(jwt.MapClaims)
+		if !ok {
+			http.Error(w, "Invalid token claims", http.StatusUnauthorized)
+			return
 		}
 
-		// 5. Proceed to next handler
-		next(w, r)
+		// ✅ Get user ID from token
+		userIDStr, ok := claims["user_id"].(string)
+		if !ok {
+			http.Error(w, "Invalid user ID", http.StatusUnauthorized)
+			return
+		}
+
+		userUUID, err := uuid.Parse(userIDStr)
+		if err != nil {
+			http.Error(w, "Invalid user UUID format", http.StatusUnauthorized)
+			return
+		}
+
+		// ✅ Add userID to context
+		ctx := context.WithValue(r.Context(), userIDKey, userUUID)
+
+		// Pass modified request to next handler
+		next(w, r.WithContext(ctx))
 	}
+}
+
+// ✅ Function to extract user ID from context in handler
+func GetUserIDFromContext(r *http.Request) (uuid.UUID, error) {
+	userID := r.Context().Value(userIDKey)
+	if userID == nil {
+		return uuid.Nil, fmt.Errorf("user ID not found in context")
+	}
+
+	userUUID, ok := userID.(uuid.UUID)
+	if !ok {
+		return uuid.Nil, fmt.Errorf("invalid user ID type")
+	}
+	return userUUID, nil
 }
