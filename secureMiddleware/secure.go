@@ -27,8 +27,11 @@ func GenerateJWT(userID uuid.UUID) (string, error) {
 
 func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		authHeader := r.Header.Get("Authorization")
+		log.Println("header", authHeader)
 
 		cookie, err := r.Cookie("Authorization")
+		log.Println("error", err)
 		if err != nil {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
