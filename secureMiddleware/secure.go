@@ -74,7 +74,7 @@ func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 			http.Error(w, "Invalid user UUID format", http.StatusUnauthorized)
 			return
 		}
-
+		log.Println("uuuuuuuuuuuid", userUUID)
 		// ✅ Add userID to context
 		ctx := context.WithValue(r.Context(), userIDKey, userUUID)
 

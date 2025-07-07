@@ -199,7 +199,7 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 			HttpOnly: true,
 			Secure:   true,                  // Only over HTTPS
 			SameSite: http.SameSiteNoneMode, // For cross-origin
-			MaxAge:   86400,                 // 1 day
+			MaxAge:   3600,                  // 1 day
 		})
 
 		// Send safe user data
