@@ -97,6 +97,20 @@ func CheckHealth(w http.ResponseWriter, r *http.Request) {
 
 func CreateProfile(w http.ResponseWriter, r *http.Request) {
 	global.Upgrader.CheckOrigin = func(r *http.Request) bool { return true }
+	// global.Upgrader.CheckOrigin = func(r *http.Request) bool {
+	// 	userUUid, err := securemiddleware.GetUserIDFromContext(r)
+	// 	if err != nil {
+	// 		w.Write([]byte("error in connection stablish"))
+	// 		return false
+	// 	}
+
+	// 	if userUUid != uuid.Nil {
+	// 		log.Println("connection stablish", userUUid)
+	// 		return true
+	// 	}
+	// 	return false
+
+	// }
 	ws, err := global.Upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println("error come in create profile", err)
@@ -299,11 +313,12 @@ func RequestSend(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&input)
 
 	if err != nil {
+
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
 
-	if input.UserProfileId != 0 || input.FriendId != 0 {
+	if input.UserProfileId == 0 || input.FriendId == 0 {
 		http.Error(w, "something went wrong", http.StatusBadRequest)
 		return
 	}
@@ -356,7 +371,19 @@ func RequestSend(w http.ResponseWriter, r *http.Request) {
 		RequestId:     rId.ID,
 	}
 
-	if err := global.DBase.Model(&global.UserFriend{}).Find(&rCreate).Error; err != nil {
+	var findAlreadySendReq global.UserFriend
+
+	if err := global.DBase.Model(&global.UserFriend{}).Where("user_profile_id=? AND request_id=?", rCreate.UserProfileId, rCreate.RequestId).Find(&findAlreadySendReq).Error; err != nil {
+		http.Error(w, "failed to find in database", http.StatusInternalServerError)
+		return
+	}
+
+	if findAlreadySendReq.RequestId != 0 {
+		http.Error(w, "request already send", http.StatusInternalServerError)
+		return
+	}
+
+	if err := global.DBase.Debug().Model(&global.UserFriend{}).Create(&rCreate).Error; err != nil {
 		http.Error(w, "failed to send request", http.StatusInternalServerError)
 		return
 	}

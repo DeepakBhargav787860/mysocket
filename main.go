@@ -45,7 +45,7 @@ func main() {
 	http.Handle("/signUpUser", cros.EnableCORS(http.HandlerFunc(businesslogic.SignUp)))
 	http.Handle("/loginUser", cros.EnableCORS(http.HandlerFunc(businesslogic.LoginUser)))
 	http.Handle("/userProfile", securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.UserProfile)))
-	http.Handle("/requestSend", securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.RequestSend)))
+	http.Handle("/requestSend", cros.EnableCORS(securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.RequestSend))))
 	http.Handle("/getRequestSend", securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.GetRequestSend)))
 	http.Handle("/requestCome", securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.RequestCome)))
 	http.Handle("/activeUser", securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.ActiveUser)))
