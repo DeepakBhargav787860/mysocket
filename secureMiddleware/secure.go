@@ -27,6 +27,7 @@ func GenerateJWT(userID uuid.UUID) (string, error) {
 
 func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		authHeader := r.Header.Get("Authorization")
 		log.Println("header", authHeader)
 
