@@ -4,9 +4,10 @@ import "net/http"
 
 func EnableCORS(next http.Handler) http.Handler {
 	allowedOrigins := map[string]bool{
-		"http://127.0.0.1:5173":                 true,
-		"http://localhost:5173":                 true,
-		"https://socket-application.vercel.app": true,
+		"http://127.0.0.1:5173":                      true,
+		"http://localhost:5173":                      true,
+		"https://socket-application.vercel.app":      true,
+		"https://socket-application-mp9v.vercel.app": true,
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
