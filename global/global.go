@@ -51,6 +51,7 @@ type UserProfile struct {
 	Address   string    `json:"address" binding:"required"`
 	EmailId   string    `json:"emailId" binding:"required"`
 	Password  string    `json:"password" binding:"required"`
+	IsLogin   bool      `json:"isLogin" gorm:"default:false"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
