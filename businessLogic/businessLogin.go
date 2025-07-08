@@ -401,7 +401,7 @@ func RequestCome(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if input.Id != 0 {
+	if input.Id == 0 {
 		http.Error(w, "something went wrong", http.StatusBadRequest)
 		return
 	}
@@ -465,3 +465,88 @@ func FindUserByMobileNo(w http.ResponseWriter, r *http.Request) {
 	}
 
 }
+
+func InComingRequest(w http.ResponseWriter, r *http.Request) {
+	//open ws connection
+	global.Upgrader.CheckOrigin = func(r *http.Request) bool { return true }
+	// global.Upgrader.CheckOrigin = func(r *http.Request) bool {
+	// 	userUuid, err := securemiddleware.GetUserIDFromContext(r)
+	// 	if err != nil {
+	// 		http.Error(w, "failed to origin check", http.StatusBadRequest)
+	// 		log.Println("error in open connection", err)
+	// 		return false
+	// 	}
+	// 	if userUuid != uuid.Nil {
+	// 		log.Println("connection open")
+	// 		return true
+	// 	}
+	// 	http.Error(w, "failed to origin check1", http.StatusBadRequest)
+	// 	log.Println("connection failed")
+	// 	return false
+
+	// }
+
+	ws, err := global.Upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		http.Error(w, "Could not open websocket connection", http.StatusBadRequest)
+		// ws.WriteMessage(websocket.TextMessage, []byte("failed to websocket setup"))
+		fmt.Println(err)
+		return
+	}
+
+	defer ws.Close()
+	// var getInReq = make(chan []global.UserFriend)
+	// read request data
+	for {
+		var input global.MyBestHalfId
+		err := ws.ReadJSON(&input)
+		if err != nil {
+			ws.WriteMessage(websocket.TextMessage, []byte("failed to read data"))
+			//always break not return
+			break
+		}
+		go func(input global.MyBestHalfId) {
+			var data []global.UserFriend
+			if err := global.DBase.Model(&global.UserFriend{}).Where("request_id=? AND friend_req_status=?", input.Id, "NO").Preload("UserProfile").Find(&data).Error; err != nil {
+				ws.WriteMessage(websocket.TextMessage, []byte("failed to find in database"))
+				return
+			}
+			ws.WriteJSON(data)
+		}(input)
+	}
+
+	// go func() {
+	// 	for data := range getInReq {
+	// 		ws.WriteJSON(data)
+	// 	}
+	// }()
+
+}
+
+// func HandleConnections(w http.ResponseWriter, r *http.Request) {
+// 	// when cross platform used like frontend and backend work on different platform
+// 	global.Upgrader.CheckOrigin = func(r *http.Request) bool {
+// 		origin := r.Header.Get("Origin")
+// 		return origin == "https://chat-steel-zeta-49.vercel.app" || origin == "https://chat-sj5k-deepaks-projects-a5241927.vercel.app"
+// 	}
+// 	ws, err := global.Upgrader.Upgrade(w, r, nil)
+// 	if err != nil {
+// 		fmt.Println(err)
+// 		return
+// 	}
+// 	defer ws.Close()
+
+// 	clients[ws] = true
+
+// 	for {
+// 		var msg global.Message
+
+// 		err := ws.ReadJSON(&msg)
+// 		if err != nil {
+// 			delete(clients, ws)
+// 			break
+// 		}
+// 		global.DBase.Create(&msg)
+// 		broadcast <- msg
+// 	}
+// }
