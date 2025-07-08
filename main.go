@@ -46,11 +46,12 @@ func main() {
 	http.Handle("/loginUser", cros.EnableCORS(http.HandlerFunc(businesslogic.LoginUser)))
 	http.Handle("/userProfile", securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.UserProfile)))
 	http.Handle("/requestSend", cros.EnableCORS(securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.RequestSend))))
-	http.Handle("/getRequestSend", securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.GetRequestSend)))
+	http.Handle("/getRequestSend", cros.EnableCORS(securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.GetRequestSend))))
 	http.Handle("/requestCome", securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.RequestCome)))
 	http.Handle("/activeUser", securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.ActiveUser)))
 	http.Handle("/getAllUser", securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.GetAllUser)))
 	http.Handle("/findUserByMobileNo", cros.EnableCORS(securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.FindUserByMobileNo))))
+
 	// Wrap your mux with logging middleware
 	// loggedMux := middleware.LoggingMiddleware(mux)
 	go businesslogic.HandleMessages()

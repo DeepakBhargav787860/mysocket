@@ -294,7 +294,7 @@ func GetRequestSend(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if input.Id != 0 {
+	if input.Id == 0 {
 		http.Error(w, "something went wrong", http.StatusBadRequest)
 		return
 	}
