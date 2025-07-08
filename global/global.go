@@ -28,6 +28,12 @@ type ReqMobileNo struct {
 	MobileNo string `json:"mobileNo" binding:"required" `
 }
 
+type RequestAcb struct {
+	Status        string `json:"status" binding:"required" `
+	UserProfileId uint   `json:"userProfileId" binding:"required"`
+	RequestId     uint   `json:"requestId" binding:"required"`
+}
+
 type MyBestHalf struct {
 	Username string `json:"username" binding:"required" `
 }
@@ -47,6 +53,11 @@ type UserProfile struct {
 	Password  string    `json:"password" binding:"required"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
+}
+
+type BlockedAccount struct {
+	ID   uint      `gorm:"primaryKey"`
+	UUID uuid.UUID `json:"uuid"`
 }
 
 type Request struct {

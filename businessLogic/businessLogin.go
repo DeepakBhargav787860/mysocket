@@ -300,7 +300,7 @@ func GetRequestSend(w http.ResponseWriter, r *http.Request) {
 	}
 	var data []global.UserFriend
 
-	if err := global.DBase.Model(&global.UserFriend{}).Where("user_profile_id=? AND friend_req_status=?", input.Id, "NO").Preload("Request").Find(&data).Error; err != nil {
+	if err := global.DBase.Model(&global.UserFriend{}).Where("user_profile_id=?  AND friend_req_status NOT IN (?)", input.Id, []string{"BLOCKED"}).Preload("Request").Find(&data).Error; err != nil {
 		http.Error(w, "failed to find in database", http.StatusInternalServerError)
 		return
 	}
@@ -467,6 +467,30 @@ func FindUserByMobileNo(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func RequestARB(w http.ResponseWriter, r *http.Request) {
+
+	var input global.RequestAcb
+	err := json.NewDecoder(r.Body).Decode(&input)
+
+	if err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	if input.Status == "" || input.UserProfileId == 0 || input.RequestId == 0 {
+		http.Error(w, "something went wrong", http.StatusBadRequest)
+		return
+	}
+
+	if err := global.DBase.Model(&global.UserFriend{}).Where("user_profile_id=? AND request_id=?", input.UserProfileId, input.RequestId).Updates(map[string]interface{}{
+		"FriendReqStatus": input.Status,
+	}).Error; err != nil {
+		http.Error(w, "failed to find in database", http.StatusInternalServerError)
+		return
+	}
+	response.MessagePassed(w, fmt.Sprintf("Request Successfully: %s", input.Status))
+}
+
 func InComingRequest(w http.ResponseWriter, r *http.Request) {
 	//open ws connection
 	global.Upgrader.CheckOrigin = func(r *http.Request) bool { return true }
@@ -508,7 +532,7 @@ func InComingRequest(w http.ResponseWriter, r *http.Request) {
 		}
 		go func() {
 			var data []global.UserFriend
-			if err := global.DBase.Model(&global.UserFriend{}).Where("pd=? AND friend_req_status=?", input.Id, "NO").Preload("UserProfile").Find(&data).Error; err != nil {
+			if err := global.DBase.Model(&global.UserFriend{}).Where("pd=?", input.Id).Preload("UserProfile").Find(&data).Error; err != nil {
 				ws.WriteMessage(websocket.TextMessage, []byte("failed to find in database"))
 				return
 			}
