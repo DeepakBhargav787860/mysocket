@@ -65,6 +65,7 @@ type UserFriend struct {
 	UUID            uuid.UUID   `json:"uuid"`
 	ID              uint        `gorm:"primaryKey"`
 	UserProfileId   uint        `json:"userProfileId" binding:"required"`
+	PD              uint        `json:"pd"`
 	RequestId       uint        `json:"requestId" binding:"required"`
 	FriendReqStatus string      `json:"friendReqStatus" gorm:"default:'NO'"` //YES NO
 	UserProfile     UserProfile `json:"userProfileData"`

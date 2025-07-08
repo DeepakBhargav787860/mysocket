@@ -369,11 +369,12 @@ func RequestSend(w http.ResponseWriter, r *http.Request) {
 		UUID:          uuid.New(),
 		UserProfileId: input.UserProfileId,
 		RequestId:     rId.ID,
+		PD:            input.FriendId,
 	}
 
 	var findAlreadySendReq global.UserFriend
 
-	if err := global.DBase.Model(&global.UserFriend{}).Where("user_profile_id=? AND request_id=?", rCreate.UserProfileId, rCreate.RequestId).Find(&findAlreadySendReq).Error; err != nil {
+	if err := global.DBase.Model(&global.UserFriend{}).Where("user_profile_id=? AND pd=?", rCreate.UserProfileId, rCreate.RequestId).Find(&findAlreadySendReq).Error; err != nil {
 		http.Error(w, "failed to find in database", http.StatusInternalServerError)
 		return
 	}
@@ -507,7 +508,7 @@ func InComingRequest(w http.ResponseWriter, r *http.Request) {
 		}
 		go func() {
 			var data []global.UserFriend
-			if err := global.DBase.Model(&global.UserFriend{}).Where("request_id=? AND friend_req_status=?", input.Id, "NO").Preload("UserProfile").Find(&data).Error; err != nil {
+			if err := global.DBase.Model(&global.UserFriend{}).Where("pd=? AND friend_req_status=?", input.Id, "NO").Preload("UserProfile").Find(&data).Error; err != nil {
 				ws.WriteMessage(websocket.TextMessage, []byte("failed to find in database"))
 				return
 			}
