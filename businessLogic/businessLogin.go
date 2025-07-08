@@ -505,7 +505,7 @@ func InComingRequest(w http.ResponseWriter, r *http.Request) {
 			//always break not return
 			break
 		}
-		go func(input global.MyBestHalfId) {
+		go func() {
 			var data []global.UserFriend
 			if err := global.DBase.Model(&global.UserFriend{}).Where("request_id=? AND friend_req_status=?", input.Id, "NO").Preload("UserProfile").Find(&data).Error; err != nil {
 				ws.WriteMessage(websocket.TextMessage, []byte("failed to find in database"))
@@ -513,7 +513,7 @@ func InComingRequest(w http.ResponseWriter, r *http.Request) {
 			}
 			log.Println("data", data)
 			ws.WriteJSON(data)
-		}(input)
+		}()
 	}
 
 	// go func() {
