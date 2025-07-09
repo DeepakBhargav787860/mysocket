@@ -44,6 +44,7 @@ func main() {
 	//without socket
 	http.Handle("/signUpUser", cros.EnableCORS(http.HandlerFunc(businesslogic.SignUp)))
 	http.Handle("/loginUser", cros.EnableCORS(http.HandlerFunc(businesslogic.LoginUser)))
+	http.Handle("/logout", cros.EnableCORS(securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.Logout))))
 	http.Handle("/userProfile", securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.UserProfile)))
 	http.Handle("/requestSend", cros.EnableCORS(securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.RequestSend))))
 	http.Handle("/getRequestSend", cros.EnableCORS(securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.GetRequestSend))))

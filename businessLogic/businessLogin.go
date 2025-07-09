@@ -205,6 +205,13 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		if err := global.DBase.Model(&global.UserProfile{}).Where("mobile_no=?", input.MobileNo).Updates(map[string]interface{}{
+			"IsLogin": true,
+		}).Error; err != nil {
+			http.Error(w, "failed to login", http.StatusInternalServerError)
+			return
+		}
+
 		// Set JWT in secure cookie
 		http.SetCookie(w, &http.Cookie{
 			Name:     "Authorization",
@@ -258,6 +265,36 @@ func ActiveUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response.MessagePassed(w, data)
+}
+
+func Logout(w http.ResponseWriter, r *http.Request) {
+	var logoutId global.MyBestHalfId
+	err := json.NewDecoder(r.Body).Decode(&logoutId)
+	if err != nil {
+		http.Error(w, "something went wrong", http.StatusBadRequest)
+		return
+	}
+
+	if err := global.DBase.Model(&global.UserProfile{}).Where("id=?", logoutId.Id).Updates(map[string]interface{}{
+		"IsLogin": false,
+	}).Error; err != nil {
+		http.Error(w, "failed to logout", http.StatusInternalServerError)
+		return
+	}
+	//reset cookie
+	// also expire token which is set 1 hour (pending task)
+	http.SetCookie(w, &http.Cookie{
+		Name:     "Authorization",
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	// Optional response
+	response.MessagePassed(w, "logout successfully")
 }
 
 func UserProfile(w http.ResponseWriter, r *http.Request) {
