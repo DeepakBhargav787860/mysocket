@@ -8,6 +8,7 @@ func EnableCORS(next http.Handler) http.Handler {
 		"http://localhost:5173":                      true,
 		"https://socket-application.vercel.app":      true,
 		"https://socket-application-mp9v.vercel.app": true,
+		"https://chat-sj5k.vercel.app":               true,
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
