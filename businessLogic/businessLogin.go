@@ -536,7 +536,7 @@ func InComingRequest(w http.ResponseWriter, r *http.Request) {
 				ws.WriteMessage(websocket.TextMessage, []byte("failed to find in database"))
 				return
 			}
-			log.Println("data", data)
+			// log.Println("data", data)
 			ws.WriteJSON(data)
 		}()
 	}
