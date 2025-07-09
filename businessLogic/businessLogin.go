@@ -249,14 +249,14 @@ func ActiveUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if input.Id != 0 {
+	if input.Id == 0 {
 		http.Error(w, "something went wrong", http.StatusBadRequest)
 		return
 	}
 	var data []global.UserFriend
 
 	if err := global.DBase.Model(&global.UserFriend{}).
-		Where("(user_profile_id = ? OR request_id = ?) AND friend_req_status = ?", input.Id, input.Id, "YES").
+		Where("(user_profile_id = ? OR pd = ?) AND friend_req_status IN(?)", input.Id, input.Id, []string{"YES", "ACCEPTED"}).
 		Preload("Request").
 		Preload("UserProfile").
 		Find(&data).Error; err != nil {

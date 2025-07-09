@@ -53,8 +53,8 @@ func main() {
 	//batter use
 	http.HandleFunc("/getIncomingRequest", businesslogic.InComingRequest)
 
-	http.Handle("/activeUser", securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.ActiveUser)))
-	http.Handle("/getAllUser", securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.GetAllUser)))
+	http.Handle("/activeUser", cros.EnableCORS(securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.ActiveUser))))
+	http.Handle("/getAllUser", cros.EnableCORS(securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.GetAllUser))))
 	http.Handle("/findUserByMobileNo", cros.EnableCORS(securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.FindUserByMobileNo))))
 	http.Handle("/requestARB", cros.EnableCORS(securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.RequestARB))))
 
