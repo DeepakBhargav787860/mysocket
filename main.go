@@ -52,6 +52,7 @@ func main() {
 	http.Handle("/requestCome", cros.EnableCORS(securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.RequestCome))))
 	//batter use
 	http.HandleFunc("/getIncomingRequest", businesslogic.InComingRequest)
+	http.HandleFunc("/getSendingRequest", businesslogic.GetSendingRequest)
 
 	http.Handle("/activeUser", cros.EnableCORS(securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.ActiveUser))))
 	http.Handle("/getAllUser", cros.EnableCORS(securemiddleware.AuthMiddleware(http.HandlerFunc(businesslogic.GetAllUser))))

@@ -586,6 +586,47 @@ func InComingRequest(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func GetSendingRequest(w http.ResponseWriter, r *http.Request) {
+	//open ws connection
+	global.Upgrader.CheckOrigin = func(r *http.Request) bool { return true }
+	ws, err := global.Upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		http.Error(w, "Could not open websocket connection", http.StatusBadRequest)
+		// ws.WriteMessage(websocket.TextMessage, []byte("failed to websocket setup"))
+		fmt.Println(err)
+		return
+	}
+
+	defer ws.Close()
+	// var getInReq = make(chan []global.UserFriend)
+	// read request data
+	for {
+		var input global.MyBestHalfId
+		err := ws.ReadJSON(&input)
+		if err != nil {
+			ws.WriteMessage(websocket.TextMessage, []byte("failed to read data"))
+			//always break not return
+			break
+		}
+		go func() {
+			var data []global.UserFriend
+			if err := global.DBase.Model(&global.UserFriend{}).Where("user_profile_id=?  AND friend_req_status NOT IN (?)", input.Id, []string{"BLOCKED"}).Preload("Request").Find(&data).Error; err != nil {
+				http.Error(w, "failed to find in database", http.StatusInternalServerError)
+				return
+			}
+		// log.Println("data", data)
+			ws.WriteJSON(data)
+		}()
+	}
+
+	// go func() {
+	// 	for data := range getInReq {
+	// 		ws.WriteJSON(data)
+	// 	}
+	// }()
+
+}
+
 // func HandleConnections(w http.ResponseWriter, r *http.Request) {
 // 	// when cross platform used like frontend and backend work on different platform
 // 	global.Upgrader.CheckOrigin = func(r *http.Request) bool {
