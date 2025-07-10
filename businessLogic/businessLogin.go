@@ -88,6 +88,9 @@ func ChatWindow(w http.ResponseWriter, r *http.Request) {
 	log.Println("frndid", friendID, userId)
 	u, _ := ConvertStringToUint(userId)
 	f, _ := ConvertStringToUint(friendID)
+	connMu.Lock()
+	connections[u] = ws
+	connMu.Unlock()
 	go SendMessages(u, f, w, ws)
 	var msg global.ChatWindow
 	for {
@@ -100,9 +103,7 @@ func ChatWindow(w http.ResponseWriter, r *http.Request) {
 			})
 			break
 		}
-		connMu.Lock()
-		connections[msg.UserProfileId] = ws
-		connMu.Unlock()
+
 		var saveMsg = global.Message{
 			UserProfileId: msg.UserProfileId,
 			FriendId:      msg.FriendId,
