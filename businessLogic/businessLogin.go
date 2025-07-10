@@ -147,7 +147,7 @@ func ChatWindow(w http.ResponseWriter, r *http.Request) {
 func SendMessages(u uint, f uint, w http.ResponseWriter, ws *websocket.Conn) {
 
 	var data []global.Message
-	if err := global.DBase.Model(&global.Message{}).Where("user_profile_id IN(?) AND friend_id IN(?)", u, f).Find(&data).Error; err != nil {
+	if err := global.DBase.Model(&global.Message{}).Where("user_profile_id IN(?) AND friend_id IN(?)", []uint{u, f}, []uint{u, f}).Find(&data).Error; err != nil {
 		// if errors.Is(err, gorm.ErrRecordNotFound) {
 		// 	ws.WriteMessage(websocket.TextMessage, []byte("no record found"))
 		// 	return
