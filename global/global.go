@@ -10,6 +10,17 @@ import (
 
 var Upgrader = websocket.Upgrader{}
 
+type ChatLoad struct {
+	UserProfileId uint `json:"userProfileId" binding:"required"`
+	FriendId      uint `json:"friendId" binding:"required"`
+}
+
+type ChatWindow struct {
+	UserProfileId uint   `json:"userProfileId" binding:"required"`
+	Content       string `json:"content" `
+	FriendId      uint   `json:"friendId" binding:"required"`
+}
+
 type Message struct {
 	gorm.Model
 	UserProfileId uint   `json:"userProfileId" binding:"required"`

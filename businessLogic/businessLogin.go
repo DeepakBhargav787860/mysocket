@@ -5,6 +5,10 @@ import (
 	passwordhashing "chatapp/passwordHashing"
 	"chatapp/response"
 	securemiddleware "chatapp/secureMiddleware"
+	"errors"
+	"strconv"
+	"sync"
+	"time"
 
 	"encoding/json"
 	"fmt"
@@ -58,6 +62,127 @@ func HandleMessages() {
 		}
 	}
 
+}
+
+var (
+	connections = make(map[uint]*websocket.Conn)
+	connMu      sync.RWMutex
+)
+
+func ChatWindow(w http.ResponseWriter, r *http.Request) {
+
+	global.Upgrader.CheckOrigin = func(r *http.Request) bool {
+		return true
+	}
+	ws, err := global.Upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		http.Error(w, "failed to stablish connection", http.StatusBadRequest)
+		return
+	}
+
+	defer ws.Close()
+
+	// Store connection
+	userId := r.URL.Query().Get("userId")
+	friendID := r.URL.Query().Get("friendId")
+	log.Println("frndid", friendID, userId)
+	u, _ := ConvertStringToUint(userId)
+	f, _ := ConvertStringToUint(friendID)
+	go SendMessages(u, f, w, ws)
+	var msg global.ChatWindow
+	for {
+
+		err := ws.ReadJSON(&msg)
+		if err != nil {
+			ws.WriteJSON(map[string]string{
+				"type":  "error",
+				"error": "failed to read message",
+			})
+			break
+		}
+		connMu.Lock()
+		connections[msg.UserProfileId] = ws
+		connMu.Unlock()
+		var saveMsg = global.Message{
+			UserProfileId: msg.UserProfileId,
+			FriendId:      msg.FriendId,
+			Content:       msg.Content,
+			CreatedAt:     time.Now(),
+			UpdatedAt:     time.Now(),
+		}
+
+		if err := global.DBase.Create(&saveMsg).Error; err != nil {
+			ws.WriteJSON(map[string]string{
+				"type":  "error",
+				"error": "error in db to save message",
+			})
+
+			return
+
+		}
+		//send itself
+		ws.WriteJSON(saveMsg)
+
+		connMu.RLock()
+		friendConn, ok := connections[msg.FriendId]
+		connMu.RUnlock()
+
+		if ok {
+			log.Println("yes msg send to frnd")
+			friendConn.WriteJSON(saveMsg)
+		}
+		//print all connection
+		for userID := range connections {
+			fmt.Println("Connected user ID:", userID)
+		}
+
+	}
+
+	// Remove connection on exit
+	connMu.Lock()
+	delete(connections, msg.UserProfileId)
+	connMu.Unlock()
+}
+
+func SendMessages(u uint, f uint, w http.ResponseWriter, ws *websocket.Conn) {
+
+	var data []global.Message
+	if err := global.DBase.Model(&global.Message{}).Where("user_profile_id=? AND friend_id=?", u, f).Find(&data).Error; err != nil {
+		// if errors.Is(err, gorm.ErrRecordNotFound) {
+		// 	ws.WriteMessage(websocket.TextMessage, []byte("no record found"))
+		// 	return
+		// }
+		ws.WriteJSON(map[string]string{
+			"type":  "error",
+			"error": "error in db to find message",
+		})
+
+		defer ws.Close()
+		return
+	}
+	if len(data) == 0 {
+		ws.WriteJSON(map[string]string{
+			"type":  "error",
+			"error": "no messages found",
+		})
+
+		return
+	}
+	log.Println("5")
+
+	ws.WriteJSON(data)
+}
+func ConvertStringToUint(s string) (uint, error) {
+	if s == "" {
+		return 0, errors.New("input string is empty")
+	}
+
+	num, err := strconv.ParseUint(s, 10, 64)
+	if err != nil {
+		return 0, err
+	}
+
+	return uint(num), nil
 }
 
 // func CheckHealth(w http.ResponseWriter, r *http.Request) {
@@ -614,7 +739,7 @@ func GetSendingRequest(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "failed to find in database", http.StatusInternalServerError)
 				return
 			}
-		// log.Println("data", data)
+			// log.Println("data", data)
 			ws.WriteJSON(data)
 		}()
 	}

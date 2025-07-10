@@ -38,6 +38,7 @@ func main() {
 
 	// mux := http.NewServeMux()
 	http.HandleFunc("/ws", businesslogic.HandleConnections)
+	http.HandleFunc("/chatWindow",businesslogic.ChatWindow)
 	http.Handle("/health", cros.EnableCORS(http.HandlerFunc(businesslogic.CheckHealth)))
 	//with socket
 	http.HandleFunc("/createProfile", businesslogic.CreateProfile)
