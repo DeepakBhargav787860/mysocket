@@ -92,9 +92,11 @@ func ChatWindow(w http.ResponseWriter, r *http.Request) {
 	connections[u] = ws
 	connMu.Unlock()
 	go SendMessages(u, f, w, ws)
-	var msg global.ChatWindow
+
 	for {
 
+		//type event
+		var msg global.ChatWindow
 		err := ws.ReadJSON(&msg)
 		if err != nil {
 			ws.WriteJSON(map[string]string{
@@ -103,6 +105,18 @@ func ChatWindow(w http.ResponseWriter, r *http.Request) {
 			})
 			break
 		}
+
+		if msg.Type == "typing" || msg.Type == "stop_typing" {
+			connMu.RLock()
+			toConn, ok := connections[msg.FriendId]
+			connMu.RUnlock()
+
+			if ok {
+				toConn.WriteJSON(msg)
+			}
+			continue
+		}
+		//type event stop
 
 		var saveMsg = global.Message{
 			UserProfileId: msg.UserProfileId,
@@ -141,7 +155,7 @@ func ChatWindow(w http.ResponseWriter, r *http.Request) {
 
 	// Remove connection on exit
 	connMu.Lock()
-	delete(connections, msg.UserProfileId)
+	delete(connections, u)
 	connMu.Unlock()
 }
 

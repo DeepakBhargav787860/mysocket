@@ -19,6 +19,13 @@ type ChatWindow struct {
 	UserProfileId uint   `json:"userProfileId" binding:"required"`
 	Content       string `json:"content" `
 	FriendId      uint   `json:"friendId" binding:"required"`
+	Type          string `json:"type"`
+}
+
+type Event struct {
+	Type string `json:"type"` // "typing" or "stop_typing"
+	From uint   `json:"from"`
+	To   uint   `json:"to"`
 }
 
 type Message struct {
