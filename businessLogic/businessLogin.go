@@ -6,10 +6,12 @@ import (
 	"chatapp/response"
 	securemiddleware "chatapp/secureMiddleware"
 	"errors"
+	"os"
 	"strconv"
 	"sync"
 	"time"
 
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -117,6 +119,75 @@ func ChatWindow(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		//type event stop
+
+		// voice note
+		if msg.Type == "voice" {
+			audioBytes, err := base64.StdEncoding.DecodeString(msg.AudioData)
+			if err != nil {
+				ws.WriteJSON(map[string]string{
+					"type":  "error",
+					"error": "invalid base64 audio",
+				})
+				continue
+			}
+
+			// Create voice directory if not exist
+			if err := os.MkdirAll("voice", os.ModePerm); err != nil {
+				ws.WriteJSON(map[string]string{
+					"type":  "error",
+					"error": "cannot create voice folder",
+				})
+				continue
+			}
+
+			filename := fmt.Sprintf("voice/voice_%d_%d.webm", msg.UserProfileId, time.Now().UnixMilli())
+			if err := os.WriteFile(filename, audioBytes, 0644); err != nil {
+				ws.WriteJSON(map[string]string{
+					"type":  "error",
+					"error": "cannot save audio file",
+				})
+				continue
+			}
+
+			// Save to DB (optional)
+			voiceMsg := global.Message{
+				UserProfileId: msg.UserProfileId,
+				FriendId:      msg.FriendId,
+				FilePath:      filename,
+				CreatedAt:     time.Now(),
+				UpdatedAt:     time.Now(),
+			}
+			if err := global.DBase.Create(&voiceMsg).Error; err != nil {
+				ws.WriteJSON(map[string]string{
+					"type":  "error",
+					"error": "failed to save voice in db",
+				})
+				continue
+			}
+
+			// Send back to sender and friend
+			outgoing := map[string]interface{}{
+				"type":          "voice",
+				"userProfileId": msg.UserProfileId,
+				"friendId":      msg.FriendId,
+				"filePath":      filename,
+				"createdAt":     voiceMsg.CreatedAt,
+			}
+
+			// Send to self
+			ws.WriteJSON(outgoing)
+
+			// Send to friend if online
+			connMu.RLock()
+			friendConn, ok := connections[msg.FriendId]
+			connMu.RUnlock()
+			if ok {
+				friendConn.WriteJSON(outgoing)
+			}
+			continue
+		}
+
+		//voice not end
 
 		var saveMsg = global.Message{
 			UserProfileId: msg.UserProfileId,

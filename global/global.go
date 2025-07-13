@@ -20,6 +20,7 @@ type ChatWindow struct {
 	Content       string `json:"content" `
 	FriendId      uint   `json:"friendId" binding:"required"`
 	Type          string `json:"type"`
+	AudioData     string `json:"audioData"`
 }
 
 type Event struct {
@@ -33,6 +34,7 @@ type Message struct {
 	UserProfileId uint   `json:"userProfileId" binding:"required"`
 	Content       string `json:"content"`
 	FriendId      uint   `json:"friendId" binding:"required"`
+	FilePath      string `json:"filePath" binding:"required"`
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 	DeletedAt     gorm.DeletedAt `gorm:"index" json:"-"`
