@@ -225,54 +225,49 @@ func ChatWindow(w http.ResponseWriter, r *http.Request) {
 	connMu.Unlock()
 }
 func uploadToCloudinary(audioData []byte, userId uint) (string, error) {
+	// Cloudinary config
 	cloudName := "dvn5f0ho7"
-	apiKey := "552691569815268"
-	apiSecret := "HpqUVajwjxeRkLsrEbym3mMsQVI"
+	uploadPreset := "deepak_audio" // 👈 created in your Cloudinary dashboard
 	uploadURL := fmt.Sprintf("https://api.cloudinary.com/v1_1/%s/video/upload", cloudName)
 
+	// Prepare form data
 	var requestBody bytes.Buffer
 	writer := multipart.NewWriter(&requestBody)
 
-	// Log base64 length to ensure audio is received
-	log.Printf("📦 Uploading audio for user ID %d | Audio size: %d bytes", userId, len(audioData))
-
-	// Create audio file field
+	// Create file field
 	timestamp := time.Now().UnixMilli()
 	fileField, err := writer.CreateFormFile("file", fmt.Sprintf("voice_%d_%d.webm", userId, timestamp))
 	if err != nil {
 		log.Println("❌ Failed to create form file:", err)
 		return "", err
 	}
+
 	if _, err := io.Copy(fileField, bytes.NewReader(audioData)); err != nil {
 		log.Println("❌ Failed to copy audio data:", err)
 		return "", err
 	}
 
-	// Required fields for Cloudinary upload
-	writer.WriteField("folder", "deepakbhargav") // ✅ target folder
-	writer.WriteField("timestamp", fmt.Sprintf("%d", time.Now().Unix())) // ✅ important for some auth setups
-
-	// Finalize request body
+	// Required fields for unsigned upload
+	writer.WriteField("upload_preset", uploadPreset)
+	writer.WriteField("folder", "deepakbhargav") // ✅ Store in target folder
 	writer.Close()
 
 	// Create HTTP request
 	req, err := http.NewRequest("POST", uploadURL, &requestBody)
 	if err != nil {
-		log.Println("❌ Failed to create request:", err)
+		log.Println("❌ Failed to create HTTP request:", err)
 		return "", err
 	}
 	req.Header.Set("Content-Type", writer.FormDataContentType())
-	req.SetBasicAuth(apiKey, apiSecret)
 
 	// Send the request
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		log.Println("❌ Failed to send request:", err)
+		log.Println("❌ Failed to send HTTP request:", err)
 		return "", err
 	}
 	defer resp.Body.Close()
 
-	// Read the response
 	body, _ := io.ReadAll(resp.Body)
 
 	if resp.StatusCode != http.StatusOK {
@@ -281,7 +276,7 @@ func uploadToCloudinary(audioData []byte, userId uint) (string, error) {
 		return "", fmt.Errorf("Cloudinary upload failed: %s", string(body))
 	}
 
-	// Parse response
+	// Parse response JSON
 	type cloudResp struct {
 		SecureURL string `json:"secure_url"`
 	}
