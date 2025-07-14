@@ -1,12 +1,14 @@
 package businesslogic
 
 import (
+	"bytes"
 	"chatapp/global"
 	passwordhashing "chatapp/passwordHashing"
 	"chatapp/response"
 	securemiddleware "chatapp/secureMiddleware"
 	"errors"
-	"os"
+	"io"
+	"mime/multipart"
 	"strconv"
 	"sync"
 	"time"
@@ -131,29 +133,22 @@ func ChatWindow(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
-			// Create voice directory if not exist
-			if err := os.MkdirAll("voice", os.ModePerm); err != nil {
+			// Upload to Cloudinary
+			cloudinaryURL, err := uploadToCloudinary(audioBytes, msg.UserProfileId)
+			if err != nil {
 				ws.WriteJSON(map[string]string{
 					"type":  "error",
-					"error": "cannot create voice folder",
+					"error": "Cloudinary upload failed: " + err.Error(),
 				})
 				continue
 			}
 
-			filename := fmt.Sprintf("voice/voice_%d_%d.webm", msg.UserProfileId, time.Now().UnixMilli())
-			if err := os.WriteFile(filename, audioBytes, 0644); err != nil {
-				ws.WriteJSON(map[string]string{
-					"type":  "error",
-					"error": "cannot save audio file",
-				})
-				continue
-			}
-
-			// Save to DB (optional)
+			log.Println("clounary path", cloudinaryURL)
+			// Save to DB with Cloudinary file URL
 			voiceMsg := global.Message{
 				UserProfileId: msg.UserProfileId,
 				FriendId:      msg.FriendId,
-				FilePath:      filename,
+				FilePath:      cloudinaryURL, // 🔁 Store Cloudinary URL instead of local path
 				CreatedAt:     time.Now(),
 				UpdatedAt:     time.Now(),
 			}
@@ -165,12 +160,11 @@ func ChatWindow(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
-			// Send back to sender and friend
 			outgoing := map[string]interface{}{
 				"type":          "voice",
 				"userProfileId": msg.UserProfileId,
 				"friendId":      msg.FriendId,
-				"filePath":      filename,
+				"filePath":      cloudinaryURL,
 				"createdAt":     voiceMsg.CreatedAt,
 			}
 
@@ -228,6 +222,62 @@ func ChatWindow(w http.ResponseWriter, r *http.Request) {
 	connMu.Lock()
 	delete(connections, u)
 	connMu.Unlock()
+}
+func uploadToCloudinary(audioData []byte, userId uint) (string, error) {
+	cloudName := "dvn5f0ho7"
+	apiKey := "552691569815268"
+	apiSecret := "HpqUVajwjxeRkLsrEbym3mMsQVI"
+	uploadURL := fmt.Sprintf("https://api.cloudinary.com/v1_1/%s/video/upload", cloudName)
+
+	var requestBody bytes.Buffer
+	writer := multipart.NewWriter(&requestBody)
+
+	// Attach audio file
+	timestamp := time.Now().UnixMilli()
+	fileField, err := writer.CreateFormFile("file", fmt.Sprintf("voice_%d_%d.webm", userId, timestamp))
+	if err != nil {
+		return "", err
+	}
+	if _, err := io.Copy(fileField, bytes.NewReader(audioData)); err != nil {
+		return "", err
+	}
+
+	// Optional folder (Cloudinary auto creates it)
+	writer.WriteField("folder", "deepakbhargav")
+
+	// Close the writer
+	writer.Close()
+
+	// Prepare the request
+	req, err := http.NewRequest("POST", uploadURL, &requestBody)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	req.SetBasicAuth(apiKey, apiSecret)
+
+	// Send request
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("upload failed: %s", string(body))
+	}
+
+	// Parse JSON to extract secure_url
+	type cloudResp struct {
+		SecureURL string `json:"secure_url"`
+	}
+	var cr cloudResp
+	if err := json.Unmarshal(body, &cr); err != nil {
+		return "", err
+	}
+
+	return cr.SecureURL, nil
 }
 
 func SendMessages(u uint, f uint, w http.ResponseWriter, ws *websocket.Conn) {
