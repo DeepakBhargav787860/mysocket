@@ -232,60 +232,66 @@ func uploadToCloudinary(audioData []byte, userId uint) (string, error) {
 
 	var requestBody bytes.Buffer
 	writer := multipart.NewWriter(&requestBody)
-	log.Println("audio3")
-	// Attach audio file
+
+	// Log base64 length to ensure audio is received
+	log.Printf("📦 Uploading audio for user ID %d | Audio size: %d bytes", userId, len(audioData))
+
+	// Create audio file field
 	timestamp := time.Now().UnixMilli()
 	fileField, err := writer.CreateFormFile("file", fmt.Sprintf("voice_%d_%d.webm", userId, timestamp))
 	if err != nil {
-		log.Println("audio4")
+		log.Println("❌ Failed to create form file:", err)
 		return "", err
 	}
 	if _, err := io.Copy(fileField, bytes.NewReader(audioData)); err != nil {
-		log.Println("audio5")
+		log.Println("❌ Failed to copy audio data:", err)
 		return "", err
 	}
 
-	// Optional folder (Cloudinary auto creates it)
-	writer.WriteField("folder", "deepakbhargav")
+	// Required fields for Cloudinary upload
+	writer.WriteField("folder", "deepakbhargav") // ✅ target folder
+	writer.WriteField("timestamp", fmt.Sprintf("%d", time.Now().Unix())) // ✅ important for some auth setups
 
-	// Close the writer
+	// Finalize request body
 	writer.Close()
 
-	// Prepare the request
+	// Create HTTP request
 	req, err := http.NewRequest("POST", uploadURL, &requestBody)
 	if err != nil {
-		log.Println("audio6")
+		log.Println("❌ Failed to create request:", err)
 		return "", err
 	}
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	req.SetBasicAuth(apiKey, apiSecret)
 
-	// Send request
+	// Send the request
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		log.Println("audio7")
+		log.Println("❌ Failed to send request:", err)
 		return "", err
 	}
 	defer resp.Body.Close()
 
+	// Read the response
 	body, _ := io.ReadAll(resp.Body)
-	log.Println("deepak bhargav",resp.StatusCode)
-	log.Println("deepak bhargav1",http.StatusOK)
+
 	if resp.StatusCode != http.StatusOK {
-		log.Println("audio8")
-		return "", fmt.Errorf("upload failed: %s", string(body))
+		log.Println("❌ Cloudinary upload failed with status:", resp.StatusCode)
+		log.Println("🧾 Cloudinary response:", string(body))
+		return "", fmt.Errorf("Cloudinary upload failed: %s", string(body))
 	}
 
-	// Parse JSON to extract secure_url
+	// Parse response
 	type cloudResp struct {
 		SecureURL string `json:"secure_url"`
 	}
 	var cr cloudResp
 	if err := json.Unmarshal(body, &cr); err != nil {
-		log.Println("audio9")
+		log.Println("❌ Failed to parse Cloudinary JSON:", err)
 		return "", err
 	}
 
+	log.Println("✅ Uploaded to Cloudinary:", cr.SecureURL)
 	return cr.SecureURL, nil
 }
 
