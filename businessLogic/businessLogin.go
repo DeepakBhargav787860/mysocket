@@ -132,10 +132,11 @@ func ChatWindow(w http.ResponseWriter, r *http.Request) {
 				})
 				continue
 			}
-
+			log.Println("audio1")
 			// Upload to Cloudinary
 			cloudinaryURL, err := uploadToCloudinary(audioBytes, msg.UserProfileId)
 			if err != nil {
+				log.Println("audio2")
 				ws.WriteJSON(map[string]string{
 					"type":  "error",
 					"error": "Cloudinary upload failed: " + err.Error(),
@@ -231,14 +232,16 @@ func uploadToCloudinary(audioData []byte, userId uint) (string, error) {
 
 	var requestBody bytes.Buffer
 	writer := multipart.NewWriter(&requestBody)
-
+	log.Println("audio3")
 	// Attach audio file
 	timestamp := time.Now().UnixMilli()
 	fileField, err := writer.CreateFormFile("file", fmt.Sprintf("voice_%d_%d.webm", userId, timestamp))
 	if err != nil {
+		log.Println("audio4")
 		return "", err
 	}
 	if _, err := io.Copy(fileField, bytes.NewReader(audioData)); err != nil {
+		log.Println("audio5")
 		return "", err
 	}
 
@@ -251,6 +254,7 @@ func uploadToCloudinary(audioData []byte, userId uint) (string, error) {
 	// Prepare the request
 	req, err := http.NewRequest("POST", uploadURL, &requestBody)
 	if err != nil {
+		log.Println("audio6")
 		return "", err
 	}
 	req.Header.Set("Content-Type", writer.FormDataContentType())
@@ -259,12 +263,14 @@ func uploadToCloudinary(audioData []byte, userId uint) (string, error) {
 	// Send request
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
+		log.Println("audio7")
 		return "", err
 	}
 	defer resp.Body.Close()
 
 	body, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode != http.StatusOK {
+		log.Println("audio8")
 		return "", fmt.Errorf("upload failed: %s", string(body))
 	}
 
@@ -274,6 +280,7 @@ func uploadToCloudinary(audioData []byte, userId uint) (string, error) {
 	}
 	var cr cloudResp
 	if err := json.Unmarshal(body, &cr); err != nil {
+		log.Println("audio9")
 		return "", err
 	}
 
