@@ -269,6 +269,8 @@ func uploadToCloudinary(audioData []byte, userId uint) (string, error) {
 	defer resp.Body.Close()
 
 	body, _ := io.ReadAll(resp.Body)
+	log.Println("deepak bhargav",resp.StatusCode)
+	log.Println("deepak bhargav1",http.StatusOK)
 	if resp.StatusCode != http.StatusOK {
 		log.Println("audio8")
 		return "", fmt.Errorf("upload failed: %s", string(body))
