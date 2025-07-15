@@ -69,9 +69,72 @@ func HandleMessages() {
 }
 
 var (
-	connections = make(map[uint]*websocket.Conn)
-	connMu      sync.RWMutex
+	connections   = make(map[uint]*websocket.Conn)
+	connMu        sync.RWMutex
+	vcConnections = make(map[uint]*websocket.Conn)
 )
+
+// type Client struct {
+// 	ID   string
+// 	Conn *websocket.Conn
+// }
+
+func Vc(w http.ResponseWriter, r *http.Request) {
+	global.Upgrader.CheckOrigin = func(r *http.Request) bool {
+		return true
+	}
+	ws, err := global.Upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		http.Error(w, "failed to stablish connection", http.StatusBadRequest)
+		return
+	}
+
+	defer ws.Close()
+
+	//start
+	// _, idBytes, _ := ws.ReadMessage()
+	// id := string(idBytes)
+	// parsedID, err := strconv.ParseUint(id, 10, 64)
+	// if err != nil {
+	// 	log.Println("Invalid user ID:", err)
+	// 	ws.Close()
+	// 	return
+	// }
+
+	userId := r.URL.Query().Get("userId")
+	u, _ := ConvertStringToUint(userId)
+	connMu.Lock()
+	vcConnections[u] = ws
+	connMu.Lock()
+	log.Println("uuuuuu", u)
+	ws.WriteJSON(map[string]string{
+		"message": "connection stablish",
+	})
+	for {
+		_, msg, err := ws.ReadMessage()
+		if err != nil {
+			break
+		}
+
+		to := string(msg[:36])
+		parsedID, err := strconv.ParseUint(to, 10, 64)
+		if err != nil {
+			log.Println("Invalid user ID:", err)
+			ws.Close()
+			return
+		}
+		frndID := uint(parsedID)
+		log.Println("frnd id", frndID)
+		data := msg[36:]
+		log.Println("data", data)
+		connMu.Lock()
+		if receiver, ok := vcConnections[frndID]; ok {
+			receiver.WriteMessage(websocket.TextMessage, data)
+		}
+		connMu.Unlock()
+	}
+
+}
 
 func ChatWindow(w http.ResponseWriter, r *http.Request) {
 
@@ -89,7 +152,6 @@ func ChatWindow(w http.ResponseWriter, r *http.Request) {
 	// Store connection
 	userId := r.URL.Query().Get("userId")
 	friendID := r.URL.Query().Get("friendId")
-	log.Println("frndid", friendID, userId)
 	u, _ := ConvertStringToUint(userId)
 	f, _ := ConvertStringToUint(friendID)
 	connMu.Lock()
@@ -132,11 +194,11 @@ func ChatWindow(w http.ResponseWriter, r *http.Request) {
 				})
 				continue
 			}
-			log.Println("audio1")
+
 			// Upload to Cloudinary
 			cloudinaryURL, err := uploadToCloudinary(audioBytes, msg.UserProfileId)
 			if err != nil {
-				log.Println("audio2")
+
 				ws.WriteJSON(map[string]string{
 					"type":  "error",
 					"error": "Cloudinary upload failed: " + err.Error(),
@@ -227,7 +289,7 @@ func ChatWindow(w http.ResponseWriter, r *http.Request) {
 func uploadToCloudinary(audioData []byte, userId uint) (string, error) {
 	// Cloudinary config
 	cloudName := "dvn5f0ho7"
-	uploadPreset := "deepak_audio" // 👈 created in your Cloudinary dashboard
+	uploadPreset := "deepak_audio"
 	uploadURL := fmt.Sprintf("https://api.cloudinary.com/v1_1/%s/video/upload", cloudName)
 
 	// Prepare form data
@@ -238,24 +300,24 @@ func uploadToCloudinary(audioData []byte, userId uint) (string, error) {
 	timestamp := time.Now().UnixMilli()
 	fileField, err := writer.CreateFormFile("file", fmt.Sprintf("voice_%d_%d.webm", userId, timestamp))
 	if err != nil {
-		log.Println("❌ Failed to create form file:", err)
+		log.Println("Failed to create form file:", err)
 		return "", err
 	}
 
 	if _, err := io.Copy(fileField, bytes.NewReader(audioData)); err != nil {
-		log.Println("❌ Failed to copy audio data:", err)
+		log.Println("Failed to copy audio data:", err)
 		return "", err
 	}
 
 	// Required fields for unsigned upload
 	writer.WriteField("upload_preset", uploadPreset)
-	writer.WriteField("folder", "deepakbhargav") // ✅ Store in target folder
+	writer.WriteField("folder", "deepakbhargav")
 	writer.Close()
 
 	// Create HTTP request
 	req, err := http.NewRequest("POST", uploadURL, &requestBody)
 	if err != nil {
-		log.Println("❌ Failed to create HTTP request:", err)
+		log.Println("Failed to create HTTP request:", err)
 		return "", err
 	}
 	req.Header.Set("Content-Type", writer.FormDataContentType())
@@ -263,7 +325,7 @@ func uploadToCloudinary(audioData []byte, userId uint) (string, error) {
 	// Send the request
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		log.Println("❌ Failed to send HTTP request:", err)
+		log.Println("Failed to send HTTP request:", err)
 		return "", err
 	}
 	defer resp.Body.Close()
@@ -271,8 +333,8 @@ func uploadToCloudinary(audioData []byte, userId uint) (string, error) {
 	body, _ := io.ReadAll(resp.Body)
 
 	if resp.StatusCode != http.StatusOK {
-		log.Println("❌ Cloudinary upload failed with status:", resp.StatusCode)
-		log.Println("🧾 Cloudinary response:", string(body))
+		log.Println("Cloudinary upload failed with status:", resp.StatusCode)
+		log.Println("Cloudinary response:", string(body))
 		return "", fmt.Errorf("Cloudinary upload failed: %s", string(body))
 	}
 
@@ -282,11 +344,11 @@ func uploadToCloudinary(audioData []byte, userId uint) (string, error) {
 	}
 	var cr cloudResp
 	if err := json.Unmarshal(body, &cr); err != nil {
-		log.Println("❌ Failed to parse Cloudinary JSON:", err)
+		log.Println("Failed to parse Cloudinary JSON:", err)
 		return "", err
 	}
 
-	log.Println("✅ Uploaded to Cloudinary:", cr.SecureURL)
+	log.Println("Uploaded to Cloudinary:", cr.SecureURL)
 	return cr.SecureURL, nil
 }
 
@@ -314,7 +376,6 @@ func SendMessages(u uint, f uint, w http.ResponseWriter, ws *websocket.Conn) {
 
 		return
 	}
-	log.Println("5")
 
 	ws.WriteJSON(data)
 }
