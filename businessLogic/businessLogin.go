@@ -116,8 +116,15 @@ func Vc(w http.ResponseWriter, r *http.Request) {
 		}
 
 		targetId := msg["target"].(string)
-		t, _ := ConvertStringToUint(targetId)
+		log.Println("target", targetId)
+		t, err := ConvertStringToUint(targetId)
+		if err != nil {
+			log.Println("error found", t)
+			ws.WriteMessage(websocket.TextMessage, []byte("error convert into uint"))
+			continue
+		}
 		if targetConn, ok := vcConnections[t]; ok {
+			log.Println("yes connected")
 			targetConn.WriteJSON(msg)
 		}
 	}
