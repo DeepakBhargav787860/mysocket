@@ -92,11 +92,17 @@ func Vc(w http.ResponseWriter, r *http.Request) {
 	defer ws.Close()
 
 	userId := r.URL.Query().Get("id")
-	u, _ := ConvertStringToUint(userId)
+
+	u, err := ConvertStringToUint(userId)
+	log.Println("hit", u)
+	if err != nil {
+		log.Println("err", err)
+		ws.WriteMessage(websocket.TextMessage, []byte("error convert into uint"))
+	}
 	connMu.Lock()
 	vcConnections[u] = ws
-	connMu.Lock()
-	log.Println("uuuuuu", u)
+	connMu.Unlock()
+
 	ws.WriteJSON(map[string]string{
 		"type": "connection",
 		"msg":  "WebSocket connection established",
@@ -362,12 +368,15 @@ func SendMessages(u uint, f uint, w http.ResponseWriter, ws *websocket.Conn) {
 	ws.WriteJSON(data)
 }
 func ConvertStringToUint(s string) (uint, error) {
+
 	if s == "" {
+
 		return 0, errors.New("input string is empty")
 	}
 
 	num, err := strconv.ParseUint(s, 10, 64)
 	if err != nil {
+
 		return 0, err
 	}
 
