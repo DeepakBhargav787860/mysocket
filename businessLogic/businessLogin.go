@@ -115,15 +115,20 @@ func Vc(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		targetId := msg["target"].(string)
-		log.Println("target", targetId)
-		t, err := ConvertStringToUint(targetId)
-		if err != nil {
-			log.Println("error found", t)
-			ws.WriteMessage(websocket.TextMessage, []byte("error convert into uint"))
-			continue
+		targetRaw := msg["target"]
+		log.Println("targetId", targetRaw)
+		// Try to assert it as float64 first (typical from JSON)
+		targetFloat, ok := targetRaw.(float64)
+		if !ok {
+			// Handle error
+			log.Println("target is not a number")
+			return
 		}
-		if targetConn, ok := vcConnections[t]; ok {
+
+		// Now convert float64 to uint safely
+		targetId := uint(targetFloat)
+
+		if targetConn, ok := vcConnections[targetId]; ok {
 			log.Println("yes connected")
 			targetConn.WriteJSON(msg)
 		}
