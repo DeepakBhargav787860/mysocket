@@ -91,47 +91,29 @@ func Vc(w http.ResponseWriter, r *http.Request) {
 
 	defer ws.Close()
 
-	//start
-	// _, idBytes, _ := ws.ReadMessage()
-	// id := string(idBytes)
-	// parsedID, err := strconv.ParseUint(id, 10, 64)
-	// if err != nil {
-	// 	log.Println("Invalid user ID:", err)
-	// 	ws.Close()
-	// 	return
-	// }
-
-	userId := r.URL.Query().Get("userId")
+	userId := r.URL.Query().Get("id")
 	u, _ := ConvertStringToUint(userId)
 	connMu.Lock()
 	vcConnections[u] = ws
 	connMu.Lock()
 	log.Println("uuuuuu", u)
 	ws.WriteJSON(map[string]string{
-		"message": "connection stablish",
+		"type": "connection",
+		"msg":  "WebSocket connection established",
 	})
 	for {
-		_, msg, err := ws.ReadMessage()
+		var msg map[string]interface{}
+		err := ws.ReadJSON(&msg)
 		if err != nil {
-			break
-		}
-
-		to := string(msg[:36])
-		parsedID, err := strconv.ParseUint(to, 10, 64)
-		if err != nil {
-			log.Println("Invalid user ID:", err)
-			ws.Close()
+			delete(vcConnections, u)
 			return
 		}
-		frndID := uint(parsedID)
-		log.Println("frnd id", frndID)
-		data := msg[36:]
-		log.Println("data", data)
-		connMu.Lock()
-		if receiver, ok := vcConnections[frndID]; ok {
-			receiver.WriteMessage(websocket.TextMessage, data)
+
+		targetId := msg["target"].(string)
+		t, _ := ConvertStringToUint(targetId)
+		if targetConn, ok := vcConnections[t]; ok {
+			targetConn.WriteJSON(msg)
 		}
-		connMu.Unlock()
 	}
 
 }
