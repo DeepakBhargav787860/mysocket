@@ -10,7 +10,7 @@ import (
 var db *gorm.DB
 
 func DB() *gorm.DB {
-	dsn := "host=dpg-d1hnjgvfte5s73ag8n2g-a user=apilab password=PHDZ0Y8yyr5IxaCZy1OLUXL8MoJJkM6W dbname=socket_fjdf port=5432 sslmode=disable"
+	dsn := "host=dpg-d4erkmeuk2gs739nngng-a user=socket_fjdf_21qj_user password=A42GGSzypjV11VeHxRnceCYCJRUGeRVM dbname=socket_fjdf_21qj port=5432 sslmode=disable"
 	// dsn := "host=localhost user=postgres password=deepak123 dbname=socket port=5432 sslmode=disable"
 	var err error
 	db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
